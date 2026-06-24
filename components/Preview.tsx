@@ -19,14 +19,14 @@ export function Preview({ markdown, error }: PreviewProps) {
     return (
       <div className="p-4 text-sm text-red-600 dark:text-red-400">
         <p className="font-medium">Erro ao renderizar</p>
-        <p className="mt-1 text-[var(--muted)]">{error}</p>
+        <p className="mt-1 text-muted">{error}</p>
       </div>
     );
   }
 
   if (!markdown.trim()) {
     return (
-      <p className="p-4 text-sm italic text-[var(--muted)]">
+      <p className="p-4 text-sm italic text-muted">
         O preview aparece aqui quando você digitar markdown.
       </p>
     );
@@ -38,7 +38,7 @@ export function Preview({ markdown, error }: PreviewProps) {
         remarkPlugins={plugins.remarkPlugins}
         rehypePlugins={plugins.rehypePlugins}
         fallback={
-          <p className="text-sm text-[var(--muted)]">Renderizando preview…</p>
+          <p className="text-sm text-muted">Renderizando preview…</p>
         }
       >
         {markdown}

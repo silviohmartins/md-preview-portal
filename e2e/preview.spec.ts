@@ -19,6 +19,20 @@ test.describe("live markdown preview", () => {
     });
   });
 
+  test("expands preview overlay and closes with Escape", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(page.getByTestId("editor")).toBeVisible({ timeout: 20_000 });
+    await page.getByTestId("preview-expand").click();
+
+    const overlay = page.getByTestId("preview-overlay");
+    await expect(overlay).toBeVisible();
+    await expect(overlay.locator(".preview-prose h1").first()).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(overlay).not.toBeVisible();
+  });
+
   test("health endpoint returns ok", async ({ request }) => {
     const res = await request.get("/api/health");
     expect(res.ok()).toBeTruthy();
