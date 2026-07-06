@@ -1,8 +1,12 @@
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import rehypeStringify from "rehype-stringify";
 import type { Schema } from "hast-util-sanitize";
 import remarkGfm from "remark-gfm";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
 import type { PluggableList } from "unified";
+import { unified } from "unified";
 
 export const SAMPLE_MARKDOWN = `# Olá, Markdown
 
@@ -34,20 +38,43 @@ export const sanitizeSchema: Schema = {
 
 export const remarkPlugins: PluggableList = [remarkGfm];
 
+const prettyCodeOptions = {
+  theme: {
+    light: "github-light",
+    dark: "github-dark",
+  },
+  defaultLang: "plaintext",
+} as const;
+
 export const rehypePlugins: PluggableList = [
   [rehypeSanitize, sanitizeSchema],
-  [
-    rehypePrettyCode,
-    {
-      theme: {
-        light: "github-light",
-        dark: "github-dark",
-      },
-      defaultLang: "plaintext",
-    },
-  ],
+  [rehypePrettyCode, prettyCodeOptions],
 ];
 
 export function isLargeDocument(content: string): boolean {
   return new Blob([content]).size > 50 * 1024;
+}
+
+const prettyCodeLightOptions = {
+  theme: "github-light",
+  defaultLang: "plaintext",
+} as const;
+
+export async function renderMarkdownHtml(
+  source: string,
+  options?: { codeTheme?: "light" | "dual" },
+): Promise<string> {
+  const prettyCodeConfig =
+    options?.codeTheme === "light" ? prettyCodeLightOptions : prettyCodeOptions;
+
+  const file = await unified()
+    .use(remarkParse)
+    .use(remarkPlugins)
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeSanitize, sanitizeSchema)
+    .use(rehypePrettyCode, prettyCodeConfig)
+    .use(rehypeStringify)
+    .process(source);
+
+  return String(file);
 }

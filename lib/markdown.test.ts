@@ -1,30 +1,5 @@
 import { describe, expect, it } from "vitest";
-import rehypePrettyCode from "rehype-pretty-code";
-import rehypeSanitize from "rehype-sanitize";
-import rehypeStringify from "rehype-stringify";
-import remarkGfm from "remark-gfm";
-import remarkParse from "remark-parse";
-import remarkRehype from "remark-rehype";
-import { unified } from "unified";
-import { rehypePlugins, remarkPlugins, sanitizeSchema } from "./markdown";
-
-async function renderMarkdownHtml(source: string): Promise<string> {
-  const processor = unified()
-    .use(remarkParse)
-    .use(remarkPlugins)
-    .use(remarkRehype, { allowDangerousHtml: true });
-
-  for (const plugin of rehypePlugins) {
-    if (Array.isArray(plugin)) {
-      processor.use(plugin[0], plugin[1]);
-    } else {
-      processor.use(plugin);
-    }
-  }
-
-  const file = await processor.use(rehypeStringify).process(source);
-  return String(file);
-}
+import { rehypePlugins, remarkPlugins, renderMarkdownHtml, sanitizeSchema } from "./markdown";
 
 describe("markdown pipeline", () => {
   it("renders GFM table", async () => {
@@ -58,5 +33,10 @@ describe("markdown pipeline", () => {
       (attr) => Array.isArray(attr) && attr[0] === "className",
     );
     expect(hasLanguage).toBe(true);
+  });
+
+  it("exports plugin lists for react-markdown", () => {
+    expect(remarkPlugins.length).toBeGreaterThan(0);
+    expect(rehypePlugins.length).toBeGreaterThan(0);
   });
 });

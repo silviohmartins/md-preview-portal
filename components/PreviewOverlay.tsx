@@ -6,9 +6,10 @@ type PreviewOverlayProps = {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
+  headerAction?: ReactNode;
 };
 
-export function PreviewOverlay({ open, onClose, children }: PreviewOverlayProps) {
+export function PreviewOverlay({ open, onClose, children, headerAction }: PreviewOverlayProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -52,16 +53,19 @@ export function PreviewOverlay({ open, onClose, children }: PreviewOverlayProps)
           <span className="text-[11px] font-medium uppercase tracking-wider text-muted">
             Preview
           </span>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            onClick={onClose}
-            data-testid="preview-overlay-close"
-            className="rounded-md border border-border bg-surface-elevated px-3 py-1 text-xs text-foreground transition hover:bg-surface"
-            aria-label="Sair do preview expandido"
-          >
-            Fechar
-          </button>
+          <div className="flex items-center gap-2">
+            {headerAction}
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={onClose}
+              data-testid="preview-overlay-close"
+              className="rounded-md border border-border bg-surface-elevated px-3 py-1 text-xs text-foreground transition hover:bg-surface"
+              aria-label="Sair do preview expandido"
+            >
+              Fechar
+            </button>
+          </div>
         </header>
         <div className="min-h-0 flex-1 overflow-auto">{children}</div>
       </div>
