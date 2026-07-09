@@ -46,6 +46,14 @@ describe("storage", () => {
     expect(localStorage.getItem(DRAFT_KEY)).toBe("ab");
   });
 
+  it("flush writes pending draft immediately", () => {
+    const writer = createDebouncedDraftWriter(500);
+    writer.write("pending");
+    expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
+    expect(writer.flush()).toEqual({ ok: true, value: undefined });
+    expect(localStorage.getItem(DRAFT_KEY)).toBe("pending");
+  });
+
   it("falls back when localStorage throws on write", () => {
     const spy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new DOMException("quota");

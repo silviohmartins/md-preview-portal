@@ -10,6 +10,8 @@ import { useTheme } from "@/components/ThemeProvider";
 type EditorProps = {
   value: string;
   onChange: (value: string) => void;
+  /** CodeMirror scroll container (`.cm-scroller`), for scroll sync. */
+  onScrollerReady?: (scroller: HTMLElement | null) => void;
 };
 
 const baseTheme = EditorView.theme({
@@ -21,13 +23,15 @@ const baseTheme = EditorView.theme({
 
 const themeCompartment = new Compartment();
 
-export function Editor({ value, onChange }: EditorProps) {
+export function Editor({ value, onChange, onScrollerReady }: EditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
+  const onScrollerReadyRef = useRef(onScrollerReady);
   const { mode } = useTheme();
 
   onChangeRef.current = onChange;
+  onScrollerReadyRef.current = onScrollerReady;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -51,8 +55,10 @@ export function Editor({ value, onChange }: EditorProps) {
 
     const view = new EditorView({ state, parent: containerRef.current });
     viewRef.current = view;
+    onScrollerReadyRef.current?.(view.scrollDOM);
 
     return () => {
+      onScrollerReadyRef.current?.(null);
       view.destroy();
       viewRef.current = null;
     };

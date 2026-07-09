@@ -9,6 +9,7 @@ Editor Markdown com preview ao vivo — Next.js + CodeMirror + remark/rehype.
 - **Copiar** — botão no painel Editor copia o markdown bruto para a área de transferência
 - **Exportar PDF** — botão no painel Preview baixa o conteúdo formatado como `mdPreviewPortal.pdf`
 - **Tema** claro/escuro e preview expandido em overlay
+- **Sync scroll** — alinha o scroll do editor e do preview (toggle na toolbar / ícone do editor)
 
 ## Desenvolvimento
 
@@ -39,5 +40,5 @@ Healthcheck: `GET /api/health` → `{ "status": "ok" }`
 
 - **Editor:** CodeMirror 6
 - **Preview:** react-markdown + remark-gfm + rehype-sanitize → rehype-pretty-code (Shiki)
-- **Exportação PDF:** unified (remark/rehype) + html2canvas + jsPDF
+- **Exportação PDF:** unified (remark/rehype) → HTML sanitizado → html2canvas (PNG) + jsPDF (A4, paginação por fatias)
 - **Persistência:** localStorage (`md-draft`, `md-theme`)

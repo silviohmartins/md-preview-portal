@@ -2,27 +2,23 @@
 
 import { useMemo } from "react";
 import { MarkdownHooks } from "react-markdown";
-import { rehypePlugins, remarkPlugins } from "@/lib/markdown";
+import { PreviewErrorBoundary } from "@/components/PreviewErrorBoundary";
+import { getRehypePlugins, remarkPlugins } from "@/lib/markdown";
 
 type PreviewProps = {
   markdown: string;
-  error: string | null;
+  /** When false, skips Shiki/pretty-code for large documents. */
+  highlight?: boolean;
 };
 
-export function Preview({ markdown, error }: PreviewProps) {
+export function Preview({ markdown, highlight = true }: PreviewProps) {
   const plugins = useMemo(
-    () => ({ remarkPlugins, rehypePlugins }),
-    [],
+    () => ({
+      remarkPlugins,
+      rehypePlugins: getRehypePlugins({ highlight }),
+    }),
+    [highlight],
   );
-
-  if (error) {
-    return (
-      <div className="p-4 text-sm text-red-600 dark:text-red-400">
-        <p className="font-medium">Erro ao renderizar</p>
-        <p className="mt-1 text-muted">{error}</p>
-      </div>
-    );
-  }
 
   if (!markdown.trim()) {
     return (
@@ -33,16 +29,18 @@ export function Preview({ markdown, error }: PreviewProps) {
   }
 
   return (
-    <article className="preview-prose p-4 md:p-6">
-      <MarkdownHooks
-        remarkPlugins={plugins.remarkPlugins}
-        rehypePlugins={plugins.rehypePlugins}
-        fallback={
-          <p className="text-sm text-muted">Renderizando preview…</p>
-        }
-      >
-        {markdown}
-      </MarkdownHooks>
-    </article>
+    <PreviewErrorBoundary resetKey={`${highlight}:${markdown}`}>
+      <article className="preview-prose p-4 md:p-6">
+        <MarkdownHooks
+          remarkPlugins={plugins.remarkPlugins}
+          rehypePlugins={plugins.rehypePlugins}
+          fallback={
+            <p className="text-sm text-muted">Renderizando preview…</p>
+          }
+        >
+          {markdown}
+        </MarkdownHooks>
+      </article>
+    </PreviewErrorBoundary>
   );
 }

@@ -24,6 +24,10 @@ const preview = live();
 - [ ] Outro item
 `;
 
+export const LARGE_DOCUMENT_BYTES = 50 * 1024;
+export const PREVIEW_DEBOUNCE_MS = 150;
+export const PREVIEW_DEBOUNCE_LARGE_MS = 500;
+
 /** Schema allows language classes on code before pretty-code runs. */
 export const sanitizeSchema: Schema = {
   ...defaultSchema,
@@ -46,35 +50,58 @@ const prettyCodeOptions = {
   defaultLang: "plaintext",
 } as const;
 
-export const rehypePlugins: PluggableList = [
-  [rehypeSanitize, sanitizeSchema],
-  [rehypePrettyCode, prettyCodeOptions],
-];
-
-export function isLargeDocument(content: string): boolean {
-  return new Blob([content]).size > 50 * 1024;
-}
-
 const prettyCodeLightOptions = {
   theme: "github-light",
   defaultLang: "plaintext",
 } as const;
 
+export function isLargeDocument(content: string): boolean {
+  return new Blob([content]).size > LARGE_DOCUMENT_BYTES;
+}
+
+export function getPreviewDebounceMs(content: string): number {
+  return isLargeDocument(content)
+    ? PREVIEW_DEBOUNCE_LARGE_MS
+    : PREVIEW_DEBOUNCE_MS;
+}
+
+/** Preview: sanitize first; pretty-code only when highlight is enabled. */
+export function getRehypePlugins(options?: {
+  highlight?: boolean;
+}): PluggableList {
+  const highlight = options?.highlight ?? true;
+  if (!highlight) {
+    return [[rehypeSanitize, sanitizeSchema]];
+  }
+  return [
+    [rehypeSanitize, sanitizeSchema],
+    [rehypePrettyCode, prettyCodeOptions],
+  ];
+}
+
+export const rehypePlugins: PluggableList = getRehypePlugins({
+  highlight: true,
+});
+
 export async function renderMarkdownHtml(
   source: string,
-  options?: { codeTheme?: "light" | "dual" },
+  options?: { codeTheme?: "light" | "dual"; highlight?: boolean },
 ): Promise<string> {
   const prettyCodeConfig =
     options?.codeTheme === "light" ? prettyCodeLightOptions : prettyCodeOptions;
+  const highlight = options?.highlight ?? true;
 
-  const file = await unified()
+  let processor = unified()
     .use(remarkParse)
     .use(remarkPlugins)
-    .use(remarkRehype, { allowDangerousHtml: true })
-    .use(rehypeSanitize, sanitizeSchema)
-    .use(rehypePrettyCode, prettyCodeConfig)
-    .use(rehypeStringify)
-    .process(source);
+    // Sem rehype-raw: HTML cru não vira nós; false evita superfície extra se raw for adicionado depois.
+    .use(remarkRehype, { allowDangerousHtml: false })
+    .use(rehypeSanitize, sanitizeSchema);
 
+  if (highlight) {
+    processor = processor.use(rehypePrettyCode, prettyCodeConfig);
+  }
+
+  const file = await processor.use(rehypeStringify).process(source);
   return String(file);
 }

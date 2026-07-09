@@ -60,7 +60,7 @@ export function PreviewOverlay({ open, onClose, children, headerAction }: Previe
               type="button"
               onClick={onClose}
               data-testid="preview-overlay-close"
-              className="rounded-md border border-border bg-surface-elevated px-3 py-1 text-xs text-foreground transition hover:bg-surface"
+              className="ui-pressable rounded-md border border-border bg-surface-elevated px-3 py-1 text-xs text-foreground hover:bg-surface"
               aria-label="Sair do preview expandido"
             >
               Fechar

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 
 type SplitPaneProps = {
   left: ReactNode;
@@ -9,6 +9,8 @@ type SplitPaneProps = {
   rightLabel?: string;
   leftHeaderAction?: ReactNode;
   rightHeaderAction?: ReactNode;
+  /** Scroll container of the preview pane (for scroll sync). */
+  rightScrollRef?: Ref<HTMLDivElement>;
 };
 
 export function SplitPane({
@@ -18,6 +20,7 @@ export function SplitPane({
   rightLabel = "Preview",
   leftHeaderAction,
   rightHeaderAction,
+  rightScrollRef,
 }: SplitPaneProps) {
   return (
     <main className="grid min-h-0 flex-1 grid-cols-2 divide-x divide-border">
@@ -28,7 +31,7 @@ export function SplitPane({
           </span>
           {leftHeaderAction}
         </div>
-        <div className="min-h-0 flex-1">{left}</div>
+        <div className="min-h-0 flex-1 overflow-hidden">{left}</div>
       </section>
       <section className="flex min-h-0 flex-col">
         <div className="flex items-center justify-between border-b border-border bg-pane-header px-3 py-1.5">
@@ -37,7 +40,13 @@ export function SplitPane({
           </span>
           {rightHeaderAction}
         </div>
-        <div className="min-h-0 flex-1 overflow-auto">{right}</div>
+        <div
+          ref={rightScrollRef}
+          className="min-h-0 flex-1 overflow-auto"
+          data-testid="preview-scroll"
+        >
+          {right}
+        </div>
       </section>
     </main>
   );
