@@ -5,7 +5,7 @@
 
 ## Objetivo
 
-Permitir selecionar um diretório local, listar arquivos Markdown e editar/visualizar no mdPreviewPortal, com salvar de volta no disco — sem enviar conteúdo ao servidor.
+Permitir selecionar um diretório local, listar arquivos Markdown e editar/visualizar no mdstudio.io, com salvar de volta no disco — sem enviar conteúdo ao servidor.
 
 ## Por que está adiado
 

@@ -4,7 +4,7 @@ test.describe("live markdown preview", () => {
   test("renders heading when typing in editor", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByText("mdPreviewPortal")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("mdstudio.io")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("editor")).toBeVisible({ timeout: 20_000 });
 
     const editor = page.locator(".cm-content");

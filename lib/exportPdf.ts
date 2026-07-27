@@ -669,7 +669,7 @@ async function captureToPdf(
  */
 export async function exportMarkdownToPdf(
   markdown: string,
-  filename = "mdPreviewPortal",
+  filename = "mdstudio.io",
 ): Promise<void> {
   if (!markdown.trim()) {
     throw new Error("Não há conteúdo para exportar.");

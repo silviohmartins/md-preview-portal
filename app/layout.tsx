@@ -3,7 +3,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "mdPreviewPortal",
+  title: "mdstudio.io",
   description: "Editor Markdown com preview ao vivo",
 };
 

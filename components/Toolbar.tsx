@@ -22,7 +22,7 @@ export function Toolbar({
 
   return (
     <header className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-2.5">
-      <h1 className="text-sm font-semibold tracking-tight">mdPreviewPortal</h1>
+      <h1 className="text-sm font-semibold tracking-tight">mdstudio.io</h1>
       <div className="flex items-center gap-2">
         {onToggleScrollSync && (
           <button
