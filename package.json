@@ -16,6 +16,7 @@
     "@codemirror/state": "^6.5.2",
     "@codemirror/theme-one-dark": "^6.1.2",
     "@codemirror/view": "^6.36.4",
+    "browser-fs-access": "^0.38.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "next": "^15.3.3",

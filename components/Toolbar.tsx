@@ -7,16 +7,26 @@ const toolbarButtonClass =
 
 type ToolbarProps = {
   onClear: () => void;
+  clearDisabled?: boolean;
   scrollSyncEnabled?: boolean;
   scrollSyncDisabled?: boolean;
   onToggleScrollSync?: () => void;
+  onOpenFolder?: () => void;
+  onSave?: () => void;
+  canSave?: boolean;
+  saving?: boolean;
 };
 
 export function Toolbar({
   onClear,
+  clearDisabled = false,
   scrollSyncEnabled = false,
   scrollSyncDisabled = false,
   onToggleScrollSync,
+  onOpenFolder,
+  onSave,
+  canSave = false,
+  saving = false,
 }: ToolbarProps) {
   const { mode, toggleMode } = useTheme();
 
@@ -24,6 +34,29 @@ export function Toolbar({
     <header className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-2.5">
       <h1 className="text-sm font-semibold tracking-tight">mdstudio.io</h1>
       <div className="flex items-center gap-2">
+        {onOpenFolder && (
+          <button
+            type="button"
+            onClick={onOpenFolder}
+            className={toolbarButtonClass}
+            data-testid="open-folder"
+            title="Abrir pasta local"
+          >
+            Abrir pasta
+          </button>
+        )}
+        {onSave && (
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={!canSave || saving}
+            className={toolbarButtonClass}
+            data-testid="save-file"
+            title="Salvar (Ctrl+S)"
+          >
+            {saving ? "Salvando…" : "Salvar"}
+          </button>
+        )}
         {onToggleScrollSync && (
           <button
             type="button"
@@ -59,6 +92,7 @@ export function Toolbar({
         <button
           type="button"
           onClick={onClear}
+          disabled={clearDisabled}
           className={toolbarButtonClass}
         >
           Limpar

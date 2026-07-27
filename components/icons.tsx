@@ -157,3 +157,35 @@ export function ClearInkIcon() {
     </svg>
   );
 }
+
+/** Collapse the left file explorer panel. */
+export function PanelCollapseIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      className="h-3.5 w-3.5"
+      aria-hidden="true"
+    >
+      <path d="M1.5 1A1.5 1.5 0 0 0 0 2.5v11A1.5 1.5 0 0 0 1.5 15h13a1.5 1.5 0 0 0 1.5-1.5v-11A1.5 1.5 0 0 0 14.5 1h-13zM1 2.5a.5.5 0 0 1 .5-.5H5v12H1.5a.5.5 0 0 1-.5-.5v-11zm5 11.5V2h8.5a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5H6z" />
+      <path d="M3.854 5.146a.5.5 0 0 1 0 .708L2.707 7l1.147 1.146a.5.5 0 1 1-.708.708l-1.5-1.5a.5.5 0 0 1 0-.708l1.5-1.5a.5.5 0 0 1 .708 0z" />
+    </svg>
+  );
+}
+
+/** Expand the left file explorer panel. */
+export function PanelExpandIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      className="h-3.5 w-3.5"
+      aria-hidden="true"
+    >
+      <path d="M1.5 1A1.5 1.5 0 0 0 0 2.5v11A1.5 1.5 0 0 0 1.5 15h13a1.5 1.5 0 0 0 1.5-1.5v-11A1.5 1.5 0 0 0 14.5 1h-13zM1 2.5a.5.5 0 0 1 .5-.5H5v12H1.5a.5.5 0 0 1-.5-.5v-11zm5 11.5V2h8.5a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5H6z" />
+      <path d="M2.146 5.146a.5.5 0 0 1 .708 0l1.5 1.5a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 1 1-.708-.708L3.293 7 2.146 5.854a.5.5 0 0 1 0-.708z" />
+    </svg>
+  );
+}
