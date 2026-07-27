@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode, Ref } from "react";
+import { paneHeaderClass } from "@/components/paneHeader";
 
 type SplitPaneProps = {
   left: ReactNode;
@@ -25,8 +26,8 @@ export function SplitPane({
   return (
     <main className="grid min-h-0 flex-1 grid-cols-2 divide-x divide-border">
       <section className="flex min-h-0 flex-col">
-        <div className="flex items-center justify-between border-b border-border bg-pane-header px-3 py-1.5">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-muted">
+        <div className={paneHeaderClass}>
+          <span className="truncate text-[11px] font-medium uppercase tracking-wider text-muted">
             {leftLabel}
           </span>
           {leftHeaderAction}
@@ -34,8 +35,8 @@ export function SplitPane({
         <div className="min-h-0 flex-1 overflow-hidden">{left}</div>
       </section>
       <section className="flex min-h-0 flex-col">
-        <div className="flex items-center justify-between border-b border-border bg-pane-header px-3 py-1.5">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-muted">
+        <div className={paneHeaderClass}>
+          <span className="truncate text-[11px] font-medium uppercase tracking-wider text-muted">
             {rightLabel}
           </span>
           {rightHeaderAction}
