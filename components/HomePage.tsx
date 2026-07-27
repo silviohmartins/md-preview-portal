@@ -19,6 +19,7 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useExportMarkdownPdf } from "@/hooks/useExportMarkdownPdf";
 import { useMarkdownDraft } from "@/hooks/useMarkdownDraft";
 import { useScrollSync } from "@/hooks/useScrollSync";
+import { hashMarkdown } from "@/lib/annotations/hash";
 import {
   getPreviewDebounceMs,
   isLargeDocument,
@@ -67,6 +68,10 @@ export function HomePage() {
     useExportMarkdownPdf(debouncedMarkdown);
 
   const wordCount = useMemo(() => countWords(markdown), [markdown]);
+  const annotationDocumentKey = useMemo(
+    () => hashMarkdown(debouncedMarkdown),
+    [debouncedMarkdown],
+  );
   const canExpandPreview = debouncedMarkdown.trim().length > 0;
   const canScrollSync = !previewExpanded;
 
@@ -222,6 +227,7 @@ export function HomePage() {
       <PreviewOverlay
         open={previewExpanded}
         onClose={() => setPreviewExpanded(false)}
+        documentKey={annotationDocumentKey}
         headerAction={
           <PaneIconButton
             disabled={!canExport || exportingPdf}

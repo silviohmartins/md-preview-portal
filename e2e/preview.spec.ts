@@ -28,7 +28,9 @@ test.describe("live markdown preview", () => {
     const overlay = page.getByTestId("preview-overlay");
     await expect(overlay).toBeVisible();
     await expect(overlay.locator(".preview-prose h1").first()).toBeVisible();
+    await expect(page.getByTestId("annotation-toolbar")).toBeVisible();
 
+    // Default mode is navigate — Escape closes immediately
     await page.keyboard.press("Escape");
     await expect(overlay).not.toBeVisible();
   });
