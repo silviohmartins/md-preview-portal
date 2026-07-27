@@ -6,3 +6,5 @@ out/
 test-results/
 playwright-report/
 coverage/
+tsconfig.tsbuildinfo
+*.tsbuildinfo

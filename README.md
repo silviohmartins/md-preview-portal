@@ -49,7 +49,3 @@ O explorador de arquivos é 100% client-side (File System Access API / fallback)
 - **Anotações:** SVG overlay + perfect-freehand (só no preview expandido)
 - **Exportação PDF:** unified (remark/rehype) → HTML sanitizado → html2canvas (PNG) + jsPDF (A4, paginação por fatias)
 - **Persistência:** localStorage (`md-draft`, `md-theme`, `md-annotations:{hash}`); pasta aberta via handles no IndexedDB (Chromium)
-
-## Docs
-
-- [Roadmap do explorador](docs/roadmap-explorador-arquivos.md) — decisões de arquitetura e compatibilidade de browsers
