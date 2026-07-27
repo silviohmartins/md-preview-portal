@@ -44,3 +44,9 @@ Healthcheck: `GET /api/health` → `{ "status": "ok" }`
 - **Anotações:** SVG overlay + perfect-freehand (só no preview expandido)
 - **Exportação PDF:** unified (remark/rehype) → HTML sanitizado → html2canvas (PNG) + jsPDF (A4, paginação por fatias)
 - **Persistência:** localStorage (`md-draft`, `md-theme`, `md-annotations:{hash}`)
+
+## Roadmap
+
+Funcionalidades planejadas (não implementadas):
+
+- [Explorador de arquivos locais](docs/roadmap-explorador-arquivos.md) — abrir pasta, editar e salvar `.md` no disco via File System Access API
