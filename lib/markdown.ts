@@ -7,6 +7,7 @@ import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import type { PluggableList } from "unified";
 import { unified } from "unified";
+import { rehypeMermaid } from "@/lib/rehypeMermaid";
 
 export const SAMPLE_MARKDOWN = `# Olá, Markdown
 
@@ -65,18 +66,20 @@ export function getPreviewDebounceMs(content: string): number {
     : PREVIEW_DEBOUNCE_MS;
 }
 
-/** Preview: sanitize first; pretty-code only when highlight is enabled. */
+/** Preview: sanitize first, then pull out mermaid fences before pretty-code
+ * (which has no mermaid grammar) touches them; pretty-code only when highlight is enabled. */
 export function getRehypePlugins(options?: {
   highlight?: boolean;
 }): PluggableList {
   const highlight = options?.highlight ?? true;
-  if (!highlight) {
-    return [[rehypeSanitize, sanitizeSchema]];
-  }
-  return [
+  const plugins: PluggableList = [
     [rehypeSanitize, sanitizeSchema],
-    [rehypePrettyCode, prettyCodeOptions],
+    rehypeMermaid,
   ];
+  if (highlight) {
+    plugins.push([rehypePrettyCode, prettyCodeOptions]);
+  }
+  return plugins;
 }
 
 export const rehypePlugins: PluggableList = getRehypePlugins({
