@@ -1,3 +1,8 @@
+import remarkGfm from "remark-gfm";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import rehypeStringify from "rehype-stringify";
+import { unified } from "unified";
 import { describe, expect, it } from "vitest";
 import {
   getPreviewDebounceMs,
@@ -70,8 +75,23 @@ describe("markdown pipeline", () => {
   });
 
   it("getRehypePlugins omits pretty-code when highlight is false", () => {
-    expect(getRehypePlugins({ highlight: false })).toHaveLength(1);
-    expect(getRehypePlugins({ highlight: true }).length).toBeGreaterThan(1);
+    const withoutHighlight = getRehypePlugins({ highlight: false });
+    const withHighlight = getRehypePlugins({ highlight: true });
+    expect(withHighlight.length).toBe(withoutHighlight.length + 1);
+  });
+
+  it("extracts mermaid fences into a data-mermaid-source placeholder", async () => {
+    const file = await unified()
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkRehype)
+      .use(getRehypePlugins({ highlight: false }))
+      .use(rehypeStringify)
+      .process("```mermaid\ngraph TD;\nA-->B;\n```");
+    const html = String(file);
+    expect(html).toContain("data-mermaid-source");
+    expect(html).toContain("graph TD;");
+    expect(html).not.toContain("<pre");
   });
 
   it("renderMarkdownHtml can skip highlight", async () => {

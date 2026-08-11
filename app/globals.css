@@ -134,6 +134,34 @@ body {
   font-family: var(--font-mono);
 }
 
+.mermaid-diagram {
+  margin: 1em 0;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-diagram-error {
+  margin: 1em 0;
+  border: 1px solid #f87171;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.mermaid-diagram-error-message {
+  color: #dc2626;
+  font-size: 0.85em;
+  margin: 0 0 8px;
+}
+
+.dark .mermaid-diagram-error-message {
+  color: #f87171;
+}
+
 .preview-prose table {
   width: 100%;
   border-collapse: collapse;

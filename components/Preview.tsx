@@ -1,9 +1,20 @@
 "use client";
 
 import { useMemo } from "react";
-import { MarkdownHooks } from "react-markdown";
+import { MarkdownHooks, type Components } from "react-markdown";
+import { MermaidDiagram } from "@/components/MermaidDiagram";
 import { PreviewErrorBoundary } from "@/components/PreviewErrorBoundary";
 import { getRehypePlugins, remarkPlugins } from "@/lib/markdown";
+
+const components: Components = {
+  div({ node, ...props }) {
+    const source = (props as Record<string, unknown>)["data-mermaid-source"];
+    if (typeof source === "string") {
+      return <MermaidDiagram code={source} />;
+    }
+    return <div {...props} />;
+  },
+};
 
 type PreviewProps = {
   markdown: string;
@@ -34,6 +45,7 @@ export function Preview({ markdown, highlight = true }: PreviewProps) {
         <MarkdownHooks
           remarkPlugins={plugins.remarkPlugins}
           rehypePlugins={plugins.rehypePlugins}
+          components={components}
           fallback={
             <p className="text-sm text-muted">Renderizando preview…</p>
           }
