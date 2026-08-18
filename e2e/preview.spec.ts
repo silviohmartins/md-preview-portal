@@ -39,5 +39,54 @@ test.describe("live markdown preview", () => {
     const res = await request.get("/api/health");
     expect(res.ok()).toBeTruthy();
     await expect(res.json()).resolves.toEqual({ status: "ok" });
+    expect(res.headers()["content-security-policy"]).toContain(
+      "frame-ancestors 'none'",
+    );
+    expect(res.headers()["x-content-type-options"]).toBe("nosniff");
+  });
+
+  test("blocks remote Markdown images without a browser request", async ({
+    page,
+  }) => {
+    const remoteUrl = "https://images.example.invalid/private.png";
+    const remoteRequests: string[] = [];
+    page.on("request", (request) => {
+      if (request.url() === remoteUrl) remoteRequests.push(request.url());
+    });
+
+    await page.goto("/");
+    const editor = page.locator(".cm-content");
+    await expect(editor).toBeVisible({ timeout: 20_000 });
+    await editor.click();
+    await page.keyboard.press("Control+A");
+    await page.keyboard.type(`![Privada](${remoteUrl})`);
+
+    await expect(page.getByText("[Imagem remota bloqueada: Privada]")).toBeVisible();
+    expect(remoteRequests).toEqual([]);
+  });
+
+  test("exports a Mermaid preview to PDF with visible progress", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const editor = page.locator(".cm-content");
+    await expect(editor).toBeVisible({ timeout: 20_000 });
+    await editor.click();
+    await page.keyboard.press("Control+A");
+    await page.keyboard.insertText(
+      "# Fluxo atual\n\n```mermaid\ngraph TD\n  A[Editar] --> B[Exportar]\n```",
+    );
+
+    await expect(page.locator(".preview-prose .mermaid-diagram svg")).toBeVisible({
+      timeout: 20_000,
+    });
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByTestId("preview-export-pdf").click();
+    await expect(page.getByTestId("pdf-progress")).toBeVisible();
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toBe("mdstudio-io.pdf");
+    await expect(page.getByTestId("pdf-progress")).not.toBeVisible();
   });
 });

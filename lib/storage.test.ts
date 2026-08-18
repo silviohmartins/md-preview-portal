@@ -28,9 +28,9 @@ describe("storage", () => {
     expect(readDraft()).toEqual({ ok: true, value: "# test" });
   });
 
-  it("parseDraftOrSample returns sample when empty", () => {
+  it("parseDraftOrSample uses sample only when the draft is absent", () => {
     expect(parseDraftOrSample(null, SAMPLE)).toBe(SAMPLE);
-    expect(parseDraftOrSample("", SAMPLE)).toBe(SAMPLE);
+    expect(parseDraftOrSample("", SAMPLE)).toBe("");
   });
 
   it("parseDraftOrSample returns stored content", () => {

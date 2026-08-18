@@ -8,17 +8,30 @@ export type StrokePoint = {
   p?: number;
 };
 
+export type AnnotationDocumentSize = {
+  width: number;
+  height: number;
+};
+
 export type Stroke = {
   id: string;
   tool: Exclude<AnnotationTool, "eraser">;
   color: string;
   width: number;
+  /** Present for normalized points created by the v2 annotation pipeline. */
+  documentSize?: AnnotationDocumentSize;
   points: StrokePoint[];
 };
 
 export type AnnotationDoc = {
-  version: 1;
+  version: 2;
   strokes: Stroke[];
+};
+
+export type AnnotationDocumentIdentity = {
+  workspaceId: string;
+  relativePath: string;
+  contentVersion: string;
 };
 
 export const ANNOTATION_COLORS = [
@@ -33,4 +46,5 @@ export const ANNOTATION_WIDTHS = [2, 8] as const;
 export const DEFAULT_ANNOTATION_COLOR = ANNOTATION_COLORS[0];
 export const DEFAULT_ANNOTATION_WIDTH = ANNOTATION_WIDTHS[0];
 
-export const ANNOTATION_STORAGE_PREFIX = "md-annotations:";
+export const ANNOTATION_CONTENT_VERSION = "live-v2";
+export const MAX_ANNOTATION_HISTORY = 50;

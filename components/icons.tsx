@@ -189,3 +189,35 @@ export function PanelExpandIcon() {
     </svg>
   );
 }
+
+export function MenuIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+      <path d="M2 3.25h12v1.5H2v-1.5zm0 4h12v1.5H2v-1.5zm0 4h12v1.5H2v-1.5z" />
+    </svg>
+  );
+}
+
+export function MoreIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+      <circle cx="3" cy="8" r="1.4" /><circle cx="8" cy="8" r="1.4" /><circle cx="13" cy="8" r="1.4" />
+    </svg>
+  );
+}
+
+export function FolderIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+      <path d="M1.5 2.5A1.5 1.5 0 0 1 3 1h3l1.5 1.5H13A1.5 1.5 0 0 1 14.5 4v8.5A1.5 1.5 0 0 1 13 14H3a1.5 1.5 0 0 1-1.5-1.5v-10zM3 2a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V4a.5.5 0 0 0-.5-.5H7.086L5.586 2H3z" />
+    </svg>
+  );
+}
+
+export function SaveIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+      <path d="M2 1h9.5L15 4.5V14a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm1 1v4h8V2H3zm1 8v4h8v-4H4zm5-7h1v2H9V3z" />
+    </svg>
+  );
+}

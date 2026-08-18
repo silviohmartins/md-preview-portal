@@ -33,7 +33,7 @@ export class PreviewErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error("Preview render failed:", error, info.componentStack);
+    console.error("Falha ao renderizar o preview:", error, info.componentStack);
   }
 
   reset = (): void => {

@@ -18,7 +18,10 @@ const baseTheme = EditorView.theme({
   "&": { height: "100%", fontSize: "13px" },
   ".cm-scroller": { fontFamily: "var(--font-mono), ui-monospace, monospace" },
   ".cm-content": { padding: "16px" },
-  ".cm-focused": { outline: "none" },
+  "&.cm-focused": {
+    outline: "2px solid var(--connection)",
+    outlineOffset: "-2px",
+  },
 });
 
 const themeCompartment = new Compartment();
@@ -85,5 +88,5 @@ export function Editor({ value, onChange, onScrollerReady }: EditorProps) {
     });
   }, [mode]);
 
-  return <div ref={containerRef} className="h-full min-h-[300px]" data-testid="editor" />;
+  return <div ref={containerRef} className="h-full min-h-0" data-testid="editor" />;
 }

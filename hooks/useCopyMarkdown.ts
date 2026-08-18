@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { copyTextToClipboard } from "@/lib/clipboard";
 
-export type CopyStatus = "idle" | "copied" | "error";
+type CopyStatus = "idle" | "copied" | "error";
 
 export function useCopyMarkdown(text: string) {
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");

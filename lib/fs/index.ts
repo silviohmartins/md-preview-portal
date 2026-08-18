@@ -1,5 +1,18 @@
-export type { FileEntry, FsCapabilities, OpenDirectoryResult } from "@/lib/fs/types";
+export type {
+  DirectoryEnumerationProgress,
+  DirectoryEnumerationSummary,
+  DirectoryLimits,
+  FileEntry,
+  FsCapabilities,
+  OpenDirectoryOptions,
+  OpenDirectoryResult,
+} from "@/lib/fs/types";
 export type { FileSystemPort } from "@/lib/fs/port";
-export { detectFsCapabilities } from "@/lib/fs/detectCapabilities";
-export { createBrowserFsAccessAdapter } from "@/lib/fs/browserFsAccessAdapter";
-export { isMarkdownFileName, basename } from "@/lib/fs/markdownFiles";
+export {
+  createBrowserFsAccessAdapter,
+  DEFAULT_FILE_CONFIRMATION_THRESHOLD,
+  DEFAULT_MAX_DIRECTORY_DEPTH,
+} from "@/lib/fs/browserFsAccessAdapter";
+export {
+  isMarkdownFileName,
+} from "@/lib/fs/markdownFiles";

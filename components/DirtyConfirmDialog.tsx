@@ -1,5 +1,8 @@
 "use client";
 
+import { useRef } from "react";
+import { Dialog } from "@/components/Dialog";
+
 type DirtyConfirmDialogProps = {
   open: boolean;
   title?: string;
@@ -19,23 +22,25 @@ export function DirtyConfirmDialog({
   onSave,
   saving = false,
 }: DirtyConfirmDialogProps) {
-  if (!open) return null;
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div
-        className="w-full max-w-sm rounded-lg border border-border bg-surface p-5 shadow-lg"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dirty-confirm-title"
-        data-testid="dirty-confirm-dialog"
-      >
+    <Dialog
+      open={open}
+      onClose={onCancel}
+      ariaLabelledBy="dirty-confirm-title"
+      initialFocusRef={cancelRef}
+      closeOnBackdrop={!saving}
+      className="w-full max-w-sm rounded-xl border border-border bg-surface p-5 shadow-2xl"
+      testId="dirty-confirm-dialog"
+    >
         <p id="dirty-confirm-title" className="text-sm font-medium">
           {title}
         </p>
         <p className="mt-1 text-xs text-muted">{description}</p>
         <div className="mt-4 flex flex-wrap justify-end gap-2">
           <button
+            ref={cancelRef}
             type="button"
             className="ui-pressable rounded-md px-3 py-1.5 text-xs text-muted hover:bg-pane-header"
             onClick={onCancel}
@@ -65,7 +70,6 @@ export function DirtyConfirmDialog({
             </button>
           )}
         </div>
-      </div>
-    </div>
+    </Dialog>
   );
 }

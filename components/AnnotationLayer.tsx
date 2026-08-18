@@ -71,7 +71,17 @@ export function AnnotationLayer({
     (clientX: number, clientY: number) => {
       const content = contentRef.current;
       if (!content) return null;
-      return clientToDocumentPoint(clientX, clientY, content, scrollRef.current ?? undefined);
+      const documentSize = measureContentSize(content);
+      if (documentSize.width <= 0 || documentSize.height <= 0) return null;
+      return {
+        point: clientToDocumentPoint(
+          clientX,
+          clientY,
+          content,
+          scrollRef.current ?? undefined,
+        ),
+        documentSize,
+      };
     },
     [contentRef, scrollRef],
   );
@@ -80,22 +90,22 @@ export function AnnotationLayer({
     (event: PointerEvent<SVGSVGElement>) => {
       if (mode !== "draw") return;
       if (event.button !== 0) return;
-      const point = toDocPoint(event.clientX, event.clientY);
-      if (!point) return;
+      const location = toDocPoint(event.clientX, event.clientY);
+      if (!location) return;
 
       event.currentTarget.setPointerCapture(event.pointerId);
       drawingRef.current = true;
 
       if (tool === "eraser") {
-        eraseAt(point.x, point.y);
+        eraseAt(location.point.x, location.point.y, location.documentSize);
         return;
       }
 
       beginStroke({
-        x: point.x,
-        y: point.y,
+        x: location.point.x,
+        y: location.point.y,
         p: event.pressure > 0 ? event.pressure : undefined,
-      });
+      }, location.documentSize);
     },
     [mode, tool, toDocPoint, eraseAt, beginStroke],
   );
@@ -103,19 +113,19 @@ export function AnnotationLayer({
   const onPointerMove = useCallback(
     (event: PointerEvent<SVGSVGElement>) => {
       if (!drawingRef.current || mode !== "draw") return;
-      const point = toDocPoint(event.clientX, event.clientY);
-      if (!point) return;
+      const location = toDocPoint(event.clientX, event.clientY);
+      if (!location) return;
 
       if (tool === "eraser") {
-        eraseAt(point.x, point.y);
+        eraseAt(location.point.x, location.point.y, location.documentSize);
         return;
       }
 
       appendPoint({
-        x: point.x,
-        y: point.y,
+        x: location.point.x,
+        y: location.point.y,
         p: event.pressure > 0 ? event.pressure : undefined,
-      });
+      }, location.documentSize);
     },
     [mode, tool, toDocPoint, eraseAt, appendPoint],
   );
@@ -127,9 +137,20 @@ export function AnnotationLayer({
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
-      if (tool !== "eraser") endStroke();
+      endStroke();
     },
-    [tool, endStroke],
+    [endStroke],
+  );
+
+  useEffect(() => {
+    if (mode === "navigate") drawingRef.current = false;
+  }, [mode]);
+
+  useEffect(
+    () => () => {
+      if (drawingRef.current) endStroke();
+    },
+    [endStroke],
   );
 
   return (
@@ -154,14 +175,20 @@ export function AnnotationLayer({
       onPointerCancel={onPointerUp}
     >
       {strokes.map((stroke) => (
-        <StrokePath key={stroke.id} stroke={stroke} />
+        <StrokePath key={stroke.id} stroke={stroke} targetSize={size} />
       ))}
     </svg>
   );
 }
 
-function StrokePath({ stroke }: { stroke: Stroke }) {
-  const d = strokeToSvgPath(stroke);
+function StrokePath({
+  stroke,
+  targetSize,
+}: {
+  stroke: Stroke;
+  targetSize: { width: number; height: number };
+}) {
+  const d = strokeToSvgPath(stroke, { targetSize });
   if (!d) return null;
   return (
     <path

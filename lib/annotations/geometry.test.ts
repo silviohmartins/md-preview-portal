@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { clientToDocumentPoint, measureContentSize } from "./geometry";
+import {
+  clientToDocumentPoint,
+  measureContentSize,
+  normalizeDocumentPoint,
+  scaleStrokePoint,
+  scaleStrokeWidth,
+} from "./geometry";
 import { strokeToSvgPath } from "./freehand";
 import type { Stroke } from "./types";
 
@@ -39,6 +45,31 @@ describe("measureContentSize", () => {
   });
 });
 
+describe("normalized annotation geometry", () => {
+  it("normalizes against draw dimensions and scales to the current document", () => {
+    const normalized = normalizeDocumentPoint(
+      { x: 100, y: 200, p: 0.5 },
+      { width: 400, height: 800 },
+    );
+    const normalizedStroke: Stroke = {
+      ...strokeFixture(),
+      documentSize: { width: 400, height: 800 },
+      points: [normalized],
+    };
+
+    expect(normalized).toEqual({ x: 0.25, y: 0.25, p: 0.5 });
+    expect(
+      scaleStrokePoint(normalizedStroke, normalized, {
+        width: 800,
+        height: 400,
+      }),
+    ).toEqual({ x: 200, y: 100, p: 0.5 });
+    expect(
+      scaleStrokeWidth(normalizedStroke, { width: 800, height: 1600 }),
+    ).toBe(4);
+  });
+});
+
 describe("strokeToSvgPath", () => {
   it("returns empty for no points", () => {
     const stroke: Stroke = {
@@ -68,3 +99,13 @@ describe("strokeToSvgPath", () => {
     expect(d.endsWith(" Z")).toBe(true);
   });
 });
+
+function strokeFixture(): Stroke {
+  return {
+    id: "fixture",
+    tool: "pen",
+    color: "#000",
+    width: 2,
+    points: [],
+  };
+}

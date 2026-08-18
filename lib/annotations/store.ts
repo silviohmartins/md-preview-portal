@@ -3,6 +3,7 @@ import {
   eraseStrokeAt,
 } from "@/lib/annotations/storage";
 import type {
+  AnnotationDocumentSize,
   AnnotationMode,
   AnnotationTool,
   Stroke,
@@ -11,9 +12,10 @@ import type {
 import {
   DEFAULT_ANNOTATION_COLOR,
   DEFAULT_ANNOTATION_WIDTH,
+  MAX_ANNOTATION_HISTORY,
 } from "@/lib/annotations/types";
 
-export type AnnotationState = {
+type AnnotationState = {
   mode: AnnotationMode;
   tool: AnnotationTool;
   color: string;
@@ -24,16 +26,25 @@ export type AnnotationState = {
   activeStrokeId: string | null;
 };
 
-export type AnnotationAction =
+type AnnotationAction =
   | { type: "setMode"; mode: AnnotationMode }
   | { type: "setTool"; tool: AnnotationTool }
   | { type: "setColor"; color: string }
   | { type: "setWidth"; width: number }
   | { type: "load"; strokes: Stroke[] }
-  | { type: "beginStroke"; point: StrokePoint }
-  | { type: "appendPoint"; point: StrokePoint }
+  | {
+      type: "beginStroke";
+      point: StrokePoint;
+      documentSize: AnnotationDocumentSize;
+    }
+  | { type: "appendPoints"; points: StrokePoint[] }
   | { type: "endStroke" }
-  | { type: "eraseAt"; x: number; y: number }
+  | {
+      type: "eraseAt";
+      x: number;
+      y: number;
+      targetSize: AnnotationDocumentSize;
+    }
   | { type: "undo" }
   | { type: "redo" }
   | { type: "clear" };
@@ -57,7 +68,7 @@ function pushPast(state: AnnotationState, nextStrokes: Stroke[]): AnnotationStat
   return {
     ...state,
     strokes: nextStrokes,
-    past: [...state.past, state.strokes],
+    past: [...state.past, state.strokes].slice(-MAX_ANNOTATION_HISTORY),
     future: [],
     activeStrokeId: null,
   };
@@ -97,23 +108,24 @@ export function annotationReducer(
         tool: state.tool,
         color: state.color,
         width: state.width,
+        documentSize: action.documentSize,
         points: [action.point],
       };
       return {
         ...state,
         strokes: [...state.strokes, stroke],
-        past: [...state.past, state.strokes],
+        past: [...state.past, state.strokes].slice(-MAX_ANNOTATION_HISTORY),
         future: [],
         activeStrokeId: id,
       };
     }
-    case "appendPoint": {
-      if (!state.activeStrokeId) return state;
+    case "appendPoints": {
+      if (!state.activeStrokeId || action.points.length === 0) return state;
       return {
         ...state,
         strokes: state.strokes.map((s) =>
           s.id === state.activeStrokeId
-            ? { ...s, points: [...s.points, action.point] }
+            ? { ...s, points: [...s.points, ...action.points] }
             : s,
         ),
       };
@@ -133,7 +145,13 @@ export function annotationReducer(
     }
     case "eraseAt": {
       if (state.mode !== "draw") return state;
-      const next = eraseStrokeAt(state.strokes, action.x, action.y);
+      const next = eraseStrokeAt(
+        state.strokes,
+        action.x,
+        action.y,
+        8,
+        action.targetSize,
+      );
       if (next === state.strokes || next.length === state.strokes.length) {
         return state;
       }
@@ -146,7 +164,7 @@ export function annotationReducer(
         ...state,
         strokes: previous,
         past: state.past.slice(0, -1),
-        future: [state.strokes, ...state.future],
+        future: [state.strokes, ...state.future].slice(0, MAX_ANNOTATION_HISTORY),
         activeStrokeId: null,
       };
     }
@@ -156,7 +174,7 @@ export function annotationReducer(
       return {
         ...state,
         strokes: next!,
-        past: [...state.past, state.strokes],
+        past: [...state.past, state.strokes].slice(-MAX_ANNOTATION_HISTORY),
         future: rest,
         activeStrokeId: null,
       };

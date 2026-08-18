@@ -1,16 +1,28 @@
 import getStroke from "perfect-freehand";
-import type { Stroke, StrokePoint } from "@/lib/annotations/types";
+import { scaleStrokePoint, scaleStrokeWidth } from "@/lib/annotations/geometry";
+import type {
+  AnnotationDocumentSize,
+  Stroke,
+  StrokePoint,
+} from "@/lib/annotations/types";
 
 export function strokeToSvgPath(
   stroke: Stroke,
-  options?: { size?: number },
+  options?: { size?: number; targetSize?: AnnotationDocumentSize },
 ): string {
   if (stroke.points.length === 0) return "";
 
-  const size = options?.size ?? stroke.width;
-  const input: number[][] = stroke.points.map((p: StrokePoint) =>
-    p.p !== undefined ? [p.x, p.y, p.p] : [p.x, p.y],
-  );
+  const size =
+    options?.size ??
+    (options?.targetSize
+      ? scaleStrokeWidth(stroke, options.targetSize)
+      : stroke.width);
+  const input: number[][] = stroke.points.map((point: StrokePoint) => {
+    const p = options?.targetSize
+      ? scaleStrokePoint(stroke, point, options.targetSize)
+      : point;
+    return p.p !== undefined ? [p.x, p.y, p.p] : [p.x, p.y];
+  });
 
   const outline = getStroke(input, {
     size: stroke.tool === "highlighter" ? size * 3 : size * 1.5,

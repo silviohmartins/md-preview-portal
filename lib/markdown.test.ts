@@ -4,14 +4,15 @@ import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
 import { unified } from "unified";
 import { describe, expect, it } from "vitest";
+import { LARGE_DOCUMENT_BYTES } from "./documentMetrics";
 import {
   getPreviewDebounceMs,
   getRehypePlugins,
   isLargeDocument,
-  LARGE_DOCUMENT_BYTES,
   PREVIEW_DEBOUNCE_LARGE_MS,
   PREVIEW_DEBOUNCE_MS,
   rehypePlugins,
+  isRemoteMarkdownImageSource,
   remarkPlugins,
   renderMarkdownHtml,
   sanitizeSchema,
@@ -48,6 +49,30 @@ describe("markdown pipeline", () => {
     );
     expect(html.toLowerCase()).not.toContain("<iframe");
     expect(html).toContain("Safe");
+  });
+
+  it("blocks remote Markdown images without making a third-party request", async () => {
+    const html = await renderMarkdownHtml(
+      "![Diagrama](https://cdn.example.com/diagram.png)",
+    );
+
+    expect(html).not.toContain("https://cdn.example.com");
+    expect(html).not.toContain("<img");
+    expect(html).toContain("Imagem remota bloqueada: Diagrama");
+  });
+
+  it("keeps self-hosted Markdown images", async () => {
+    const html = await renderMarkdownHtml("![Logo](/logo.png)");
+
+    expect(html).toContain('<img src="/logo.png" alt="Logo">');
+  });
+
+  it("recognizes absolute and protocol-relative remote image sources", () => {
+    expect(isRemoteMarkdownImageSource("https://example.com/image.png")).toBe(
+      true,
+    );
+    expect(isRemoteMarkdownImageSource("//example.com/image.png")).toBe(true);
+    expect(isRemoteMarkdownImageSource("/image.png")).toBe(false);
   });
 
   it("renders fenced code blocks with highlight markup", async () => {
@@ -89,6 +114,17 @@ describe("markdown pipeline", () => {
       .use(rehypeStringify)
       .process("```mermaid\ngraph TD;\nA-->B;\n```");
     const html = String(file);
+    expect(html).toContain("data-mermaid-source");
+    expect(html).toContain("graph TD;");
+    expect(html).not.toContain("<pre");
+  });
+
+  it("preserves Mermaid placeholders in the HTML used by PDF export", async () => {
+    const html = await renderMarkdownHtml(
+      "```mermaid\ngraph TD;\nA-->B;\n```",
+      { codeTheme: "light", highlight: true },
+    );
+
     expect(html).toContain("data-mermaid-source");
     expect(html).toContain("graph TD;");
     expect(html).not.toContain("<pre");

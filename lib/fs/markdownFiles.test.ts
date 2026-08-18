@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { basename, isMarkdownFileName } from "@/lib/fs/markdownFiles";
+import {
+  basename,
+  isMarkdownFileName,
+  normalizeRelativePath,
+} from "@/lib/fs/markdownFiles";
 
 describe("isMarkdownFileName", () => {
   it("accepts md and markdown extensions", () => {
@@ -20,5 +24,19 @@ describe("basename", () => {
     expect(basename("docs/guide.md")).toBe("guide.md");
     expect(basename("guide.md")).toBe("guide.md");
     expect(basename("a\\b\\c.md")).toBe("c.md");
+  });
+});
+
+describe("normalizeRelativePath", () => {
+  it("normalizes separators and dot segments", () => {
+    expect(normalizeRelativePath("docs\\guides\\intro.md")).toBe(
+      "docs/guides/intro.md",
+    );
+    expect(normalizeRelativePath("./docs//guide.md")).toBe("docs/guide.md");
+  });
+
+  it("keeps parent traversal inside the relative root", () => {
+    expect(normalizeRelativePath("docs/../readme.md")).toBe("readme.md");
+    expect(normalizeRelativePath("../../readme.md")).toBe("readme.md");
   });
 });

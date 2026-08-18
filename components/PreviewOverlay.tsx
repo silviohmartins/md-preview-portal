@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { AnnotationLayer } from "@/components/AnnotationLayer";
 import { AnnotationToolbar } from "@/components/AnnotationToolbar";
+import { Dialog } from "@/components/Dialog";
 import { useAnnotationStore } from "@/hooks/useAnnotationStore";
 
 type PreviewOverlayProps = {
@@ -10,8 +11,10 @@ type PreviewOverlayProps = {
   onClose: () => void;
   children: ReactNode;
   headerAction?: ReactNode;
-  /** Stable key for annotation persistence (markdown hash). */
   documentKey: string;
+  legacyDocumentKey?: string;
+  documentName?: string;
+  returnFocusRef?: RefObject<HTMLElement | null>;
 };
 
 export function PreviewOverlay({
@@ -20,108 +23,63 @@ export function PreviewOverlay({
   children,
   headerAction,
   documentKey,
+  legacyDocumentKey,
+  documentName = "Rascunho",
+  returnFocusRef,
 }: PreviewOverlayProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const store = useAnnotationStore(documentKey);
-  const { mode, setMode } = store;
+  const store = useAnnotationStore(documentKey, legacyDocumentKey);
+  const { mode, setMode, storageError } = store;
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (wasOpenRef.current && !open) {
-      setMode("navigate");
-    }
+    if (wasOpenRef.current && !open) setMode("navigate");
     wasOpenRef.current = open;
   }, [open, setMode]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      if (mode === "draw") {
-        event.preventDefault();
-        setMode("navigate");
-        return;
-      }
-      onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose, mode, setMode]);
-
-  useEffect(() => {
-    if (open) closeButtonRef.current?.focus();
-  }, [open]);
-
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-40 flex flex-col bg-black/50 p-3 md:p-5"
-      data-testid="preview-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Preview expandido"
-      onClick={onClose}
+    <Dialog
+      open={open}
+      onClose={onClose}
+      onEscape={() => {
+        if (mode !== "draw") return true;
+        setMode("navigate");
+        return false;
+      }}
+      ariaLabel="Preview expandido"
+      initialFocusRef={closeButtonRef}
+      returnFocusRef={returnFocusRef}
+      backdropClassName="p-0 md:p-4"
+      className="preview-overlay-shell flex h-full w-full min-h-0 flex-col overflow-hidden border-border bg-surface shadow-2xl md:rounded-xl md:border"
+      testId="preview-overlay"
     >
-      <div
-        className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border bg-pane-header px-4 py-2">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-muted">
-              Preview
-            </span>
-            {mode === "draw" && (
-              <span
-                className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-rose-700 dark:text-rose-300"
-                data-testid="annotation-drawing-badge"
-              >
-                Desenhando
-              </span>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <AnnotationToolbar store={store} />
-            {headerAction}
-            <button
-              ref={closeButtonRef}
-              type="button"
-              onClick={onClose}
-              data-testid="preview-overlay-close"
-              className="ui-pressable rounded-md border border-border bg-surface-elevated px-3 py-1 text-xs text-foreground hover:bg-surface"
-              aria-label="Sair do preview expandido"
-            >
-              Fechar
-            </button>
-          </div>
-        </header>
-        <div
-          ref={scrollRef}
-          className="relative min-h-0 flex-1 overflow-auto"
-          data-testid="preview-overlay-scroll"
-        >
-          <div ref={contentRef} className="relative min-h-full">
+      <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-pane-header px-3 md:px-4">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-connection">Preview expandido</p>
+          <p className="truncate font-mono text-xs text-muted">{documentName}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {mode === "draw" && <span className="hidden rounded-md bg-rose-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-rose-300 sm:inline" data-testid="annotation-drawing-badge">Desenhando</span>}
+          {headerAction}
+          <button ref={closeButtonRef} type="button" onClick={onClose} data-testid="preview-overlay-close" className="ui-pressable min-h-10 rounded-lg border border-border bg-surface-elevated px-3 text-xs font-medium hover:border-connection/50" aria-label="Fechar preview expandido">Fechar</button>
+        </div>
+      </header>
+
+      {storageError && <div className="shrink-0 bg-red-500/10 px-4 py-2 text-center text-xs text-error" role="alert" data-testid="annotation-storage-error">{storageError}</div>}
+
+      <div className="preview-overlay-workspace grid min-h-0 flex-1">
+        <aside className="annotation-dock border-r border-border bg-surface" aria-label="Ferramentas de anotação">
+          <AnnotationToolbar store={store} />
+        </aside>
+        <div ref={scrollRef} className="preview-overlay-canvas relative min-h-0 overflow-auto bg-background" data-testid="preview-overlay-scroll">
+          <div ref={contentRef} className="relative mx-auto min-h-full w-full max-w-[960px] bg-surface shadow-[0_0_0_1px_var(--border)]">
             {children}
-            <AnnotationLayer
-              store={store}
-              contentRef={contentRef}
-              scrollRef={scrollRef}
-            />
+            <AnnotationLayer store={store} contentRef={contentRef} scrollRef={scrollRef} />
           </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

@@ -1,18 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { exportMarkdownToPdf } from "./exportPdf";
 import {
-  buildPdfFromPageCanvases,
+  composePdfOnePageAtATime,
+  sanitizeFilename,
+} from "./pdf/compose";
+import {
   choosePageEnd,
+  collectAtomicRegionsCss,
   collectPdfBreakPointsCss,
-  exportMarkdownToPdf,
   getPageHeightCss,
   planPdfPageRanges,
-  sanitizeFilename,
-} from "./exportPdf";
+} from "./pdf/pagination";
+import { renderPdfMermaidDiagrams } from "./pdf/render";
 
 const saveMock = vi.fn();
 const addImageMock = vi.fn();
 const addPageMock = vi.fn();
 const html2canvasMock = vi.fn();
+const mermaidInitializeMock = vi.fn();
+const mermaidRenderMock = vi.fn();
 
 vi.mock("./markdown", () => ({
   renderMarkdownHtml: vi
@@ -38,6 +44,13 @@ vi.mock("jspdf", () => ({
   })),
 }));
 
+vi.mock("mermaid", () => ({
+  default: {
+    initialize: mermaidInitializeMock,
+    render: (...args: unknown[]) => mermaidRenderMock(...args),
+  },
+}));
+
 function makeCanvas(width: number, height: number): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -45,7 +58,7 @@ function makeCanvas(width: number, height: number): HTMLCanvasElement {
   return canvas;
 }
 
-const canvasSpies: Array<ReturnType<typeof vi.spyOn>> = [];
+const canvasSpies: Array<{ mockRestore(): void }> = [];
 
 function stubCanvasApis(): void {
   for (const spy of canvasSpies) spy.mockRestore();
@@ -200,40 +213,141 @@ describe("collectPdfBreakPointsCss", () => {
   });
 });
 
-describe("buildPdfFromPageCanvases", () => {
-  beforeEach(() => {
-    saveMock.mockReset();
-    addImageMock.mockReset();
-    addPageMock.mockReset();
+describe("composePdfOnePageAtATime", () => {
+  it("captures, composes and releases each page before starting the next", async () => {
+    const events: string[] = [];
+    const canvases = [makeCanvas(794, 400), makeCanvas(794, 300)];
     stubCanvasApis();
-  });
 
-  afterEach(() => {
+    await composePdfOnePageAtATime({
+      filename: "sequencial",
+      totalPages: 2,
+      createPdf: async () => ({
+        internal: { pageSize: { getWidth: () => 595, getHeight: () => 842 } },
+        addImage: () => events.push("compose"),
+        addPage: () => events.push("add-page"),
+        save: () => events.push("save"),
+      }),
+      capturePage: async (index) => {
+        events.push(`capture-${index}`);
+        return canvases[index]!;
+      },
+      releaseCanvas: (canvas) => {
+        events.push("release");
+        canvas.width = 0;
+        canvas.height = 0;
+      },
+    });
+
+    expect(events).toEqual([
+      "capture-0",
+      "compose",
+      "release",
+      "capture-1",
+      "add-page",
+      "compose",
+      "release",
+      "save",
+    ]);
+    expect(canvases.every((canvas) => canvas.width === 0)).toBe(true);
     restoreCanvasApis();
   });
 
-  it("adds one PNG page for a single canvas", async () => {
-    await buildPdfFromPageCanvases([makeCanvas(794, 400)], "curto");
-    expect(addPageMock).not.toHaveBeenCalled();
-    expect(addImageMock).toHaveBeenCalledTimes(1);
-    expect(addImageMock.mock.calls[0]?.[1]).toBe("PNG");
-    expect(saveMock).toHaveBeenCalledWith("curto.pdf");
+  it("stops between pages when cancelled and releases the current canvas", async () => {
+    const controller = new AbortController();
+    const canvas = makeCanvas(794, 400);
+    stubCanvasApis();
+
+    await expect(
+      composePdfOnePageAtATime({
+        filename: "cancelado",
+        totalPages: 3,
+        signal: controller.signal,
+        createPdf: async () => ({
+          internal: { pageSize: { getWidth: () => 595, getHeight: () => 842 } },
+          addImage: vi.fn(),
+          addPage: vi.fn(),
+          save: vi.fn(),
+        }),
+        capturePage: async () => canvas,
+        releaseCanvas: (current) => {
+          current.width = 0;
+          current.height = 0;
+        },
+        onPageComposed: () => controller.abort(),
+      }),
+    ).rejects.toMatchObject({ name: "PdfExportCancelledError" });
+    expect(canvas.width).toBe(0);
+    restoreCanvasApis();
   });
 
-  it("adds extra pages for multiple canvases", async () => {
-    await buildPdfFromPageCanvases(
-      [makeCanvas(794, 400), makeCanvas(794, 400), makeCanvas(794, 200)],
-      "longo",
+  it("moves a fitting Mermaid diagram to the next page instead of slicing it", () => {
+    const root = document.createElement("div");
+    root.innerHTML = '<div class="mermaid-diagram"><svg></svg></div>';
+    const diagram = root.querySelector<HTMLElement>(".mermaid-diagram")!;
+    document.body.appendChild(root);
+    Object.defineProperty(root, "scrollHeight", { value: 2200, configurable: true });
+    vi.spyOn(root, "getBoundingClientRect").mockReturnValue({
+      top: 0,
+      bottom: 2200,
+      left: 0,
+      right: 794,
+      width: 794,
+      height: 2200,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+    vi.spyOn(diagram, "getBoundingClientRect").mockReturnValue({
+      top: 960,
+      bottom: 1100,
+      left: 0,
+      right: 600,
+      width: 600,
+      height: 140,
+      x: 0,
+      y: 960,
+      toJSON: () => ({}),
+    });
+
+    const regions = collectAtomicRegionsCss(root);
+    const breakPoints = collectPdfBreakPointsCss(root, 1000);
+    const ranges = planPdfPageRanges(2200, 1000, breakPoints, regions);
+
+    expect(regions).toContainEqual({ top: 960, bottom: 1100 });
+    expect(ranges[0]?.end).toBe(960);
+    root.remove();
+  });
+});
+
+describe("renderPdfMermaidDiagrams", () => {
+  it("replaces Mermaid placeholders with rendered SVG", async () => {
+    mermaidRenderMock.mockResolvedValueOnce({ svg: '<svg data-diagram="ok"></svg>' });
+    const root = document.createElement("div");
+    root.innerHTML = '<div data-mermaid-source="graph TD; A--&gt;B;"></div>';
+
+    await renderPdfMermaidDiagrams(root);
+
+    expect(mermaidInitializeMock).toHaveBeenCalledWith(
+      expect.objectContaining({ securityLevel: "strict", theme: "default" }),
     );
-    expect(addPageMock).toHaveBeenCalledTimes(2);
-    expect(addImageMock).toHaveBeenCalledTimes(3);
-    expect(saveMock).toHaveBeenCalledWith("longo.pdf");
+    expect(mermaidRenderMock).toHaveBeenCalledWith(
+      expect.stringMatching(/^pdf-mermaid-/),
+      "graph TD; A-->B;",
+    );
+    expect(root.querySelector("svg[data-diagram=ok]")).not.toBeNull();
+    expect(root.querySelector("[data-mermaid-source]")).toBeNull();
   });
 
-  it("rejects empty canvas list", async () => {
-    await expect(buildPdfFromPageCanvases([], "x")).rejects.toThrow(
-      "Não foi possível capturar o conteúdo para o PDF.",
-    );
+  it("keeps an inline error and source when Mermaid syntax is invalid", async () => {
+    mermaidRenderMock.mockRejectedValueOnce(new Error("Parse error"));
+    const root = document.createElement("div");
+    root.innerHTML = '<div data-mermaid-source="invalid diagram"></div>';
+
+    await renderPdfMermaidDiagrams(root);
+
+    expect(root.textContent).toContain("Erro no diagrama Mermaid: Parse error");
+    expect(root.querySelector("code")?.textContent).toBe("invalid diagram");
   });
 });
 
@@ -256,8 +370,11 @@ describe("exportMarkdownToPdf", () => {
 
   it("renderiza com tema claro + highlight e baixa o arquivo PDF", async () => {
     const { renderMarkdownHtml } = await import("./markdown");
+    const progress = vi.fn();
 
-    await exportMarkdownToPdf("# Teste", "meu-documento");
+    await exportMarkdownToPdf("# Teste", "meu-documento", {
+      onProgress: progress,
+    });
 
     expect(renderMarkdownHtml).toHaveBeenCalledWith("# Teste", {
       codeTheme: "light",
@@ -265,6 +382,11 @@ describe("exportMarkdownToPdf", () => {
     });
     expect(html2canvasMock).toHaveBeenCalled();
     expect(saveMock).toHaveBeenCalledWith("meu-documento.pdf");
+    expect(progress.mock.calls.map(([value]) => value.phase)).toEqual([
+      "preparing",
+      "capturing",
+      "saving",
+    ]);
     expect(document.querySelector(".pdf-export-root")).toBeNull();
     expect(document.getElementById("pdf-export-styles")).toBeNull();
   });

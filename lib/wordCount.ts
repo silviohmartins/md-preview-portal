@@ -1,3 +1,6 @@
 export function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
+  let count = 0;
+  const words = /\S+/g;
+  while (words.exec(text) !== null) count += 1;
+  return count;
 }

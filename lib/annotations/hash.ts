@@ -1,3 +1,5 @@
+import type { AnnotationDocumentIdentity } from "@/lib/annotations/types";
+
 /**
  * Stable, non-cryptographic hash for document keys (localStorage).
  * FNV-1a 32-bit over UTF-16 code units — deterministic across sessions.
@@ -11,6 +13,11 @@ export function hashMarkdown(content: string): string {
   return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
-export function annotationStorageKey(documentHash: string): string {
-  return `md-annotations:${documentHash}`;
+export function createAnnotationDocumentKey(
+  identity: AnnotationDocumentIdentity,
+): string {
+  const workspace = hashMarkdown(identity.workspaceId.trim() || "draft");
+  const path = encodeURIComponent(identity.relativePath.trim() || "__draft__.md");
+  const version = encodeURIComponent(identity.contentVersion);
+  return `${version}:${workspace}:${path}`;
 }

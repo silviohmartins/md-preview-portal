@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          cache: npm
+
+      - name: Install from package-lock.json
+        run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Docker build
+        run: docker build --tag mdstudio-ci .
+
+      - name: Start and verify Docker image
+        run: |
+          docker run --detach --name mdstudio-ci-runner --publish 3000:3000 mdstudio-ci
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3000/api/health >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              docker logs mdstudio-ci-runner
+              exit 1
+            fi
+            sleep 1
+          done
+          curl --fail --silent --dump-header /tmp/mdstudio-headers.txt \
+            --output /tmp/mdstudio-health.json \
+            http://127.0.0.1:3000/api/health
+          grep --quiet '"status":"ok"' /tmp/mdstudio-health.json
+          grep --ignore-case --quiet \
+            '^content-security-policy:.*frame-ancestors.*none' \
+            /tmp/mdstudio-headers.txt
+          curl --fail --silent http://127.0.0.1:3000/ >/dev/null
+          status=$(curl --silent --dump-header /tmp/mdstudio-404-headers.txt \
+            --output /tmp/mdstudio-404.html --write-out '%{http_code}' \
+            http://127.0.0.1:3000/rota-inexistente)
+          test "$status" = "404"
+          grep --quiet '<!DOCTYPE html>' /tmp/mdstudio-404.html
+          grep --ignore-case --quiet \
+            '^content-security-policy:.*frame-ancestors.*none' \
+            /tmp/mdstudio-404-headers.txt
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E Chromium
+        run: npm run test:e2e -- --project=chromium
+        env:
+          MDSTUDIO_E2E_EXTERNAL_SERVER: "true"
+
+      - name: Stop Docker image
+        if: always()
+        run: |
+          docker logs mdstudio-ci-runner || true
+          docker rm --force mdstudio-ci-runner || true

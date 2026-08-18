@@ -3,7 +3,7 @@ export const THEME_KEY = "md-theme";
 
 export type ThemeMode = "light" | "dark";
 
-export type StorageResult<T> =
+type StorageResult<T> =
   | { ok: true; value: T }
   | { ok: false; error: string };
 
@@ -14,7 +14,7 @@ function safeGetItem(key: string): StorageResult<string | null> {
   try {
     return { ok: true, value: window.localStorage.getItem(key) };
   } catch {
-    return { ok: false, error: "localStorage unavailable" };
+    return { ok: false, error: "O armazenamento local não está disponível." };
   }
 }
 
@@ -26,7 +26,7 @@ function safeSetItem(key: string, value: string): StorageResult<void> {
     window.localStorage.setItem(key, value);
     return { ok: true, value: undefined };
   } catch {
-    return { ok: false, error: "Could not save to localStorage" };
+    return { ok: false, error: "Não foi possível salvar no armazenamento local." };
   }
 }
 
@@ -59,7 +59,7 @@ export function clearDraft(): StorageResult<void> {
     window.localStorage.removeItem(DRAFT_KEY);
     return { ok: true, value: undefined };
   } catch {
-    return { ok: false, error: "Could not clear draft" };
+    return { ok: false, error: "Não foi possível limpar o rascunho salvo." };
   }
 }
 
@@ -98,8 +98,7 @@ export function parseDraftOrSample(
   raw: string | null,
   sample: string,
 ): string {
-  if (raw === null || raw === "") return sample;
-  return raw;
+  return raw === null ? sample : raw;
 }
 
 export function parseStoredTheme(raw: string | null): ThemeMode | null {
